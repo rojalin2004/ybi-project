@@ -1,0 +1,86 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Import Data
+df = pd.read_csv('https://raw.githubusercontent.com/YBIFoundation/Dataset/main/Big%20Sales%20Data.csv')
+
+# Describe Data
+print("First few rows of the dataset:")
+print(df.head())  # Display the first few rows of the dataset to understand its structure
+
+print("\nDataset info:")
+df.info()  # Get a concise summary of the dataset, including the number of non-null values and data types of each column
+
+column_names = df.columns  # Output the column names of the dataset
+print("\nColumn names:")
+print(column_names)
+
+# Data Preprocessing
+# Fill missing values in 'Item_Weight' column with the mean weight of the corresponding 'Item_Type'
+df['Item_Weight'].fillna(df.groupby(['Item_Type'])['Item_Weight'].transform('mean'), inplace=True)
+
+# Verify that missing values are handled
+print("\nDataset info after filling missing values:")
+df.info()  # Check for any remaining missing values and confirm data types
+
+# Display descriptive statistics of the dataset
+print("\nDescriptive statistics:")
+print(df.describe())
+
+# Data Visualization
+# Pairplot to visualize relationships between features
+sns.pairplot(df)
+plt.show()
+
+# Analyze the frequency of unique values in 'Item_Identifier'
+print("\nValue counts for 'Item_Identifier':")
+print(df[['Item_Identifier']].value_counts())
+
+# Analyze the frequency of unique values in 'Item_Fat_Content'
+print("\nValue counts for 'Item_Fat_Content':")
+print(df[['Item_Fat_Content']].value_counts())
+
+# Replace inconsistent values in 'Item_Fat_Content'
+df.replace({'Item_Fat_Content': {'LF': 'Low Fat', 'reg': 'Regular', 'low fat': 'Low Fat'}}, inplace=True)
+
+# Verify the replacements in 'Item_Fat_Content'
+print("\nValue counts for 'Item_Fat_Content' after replacement:")
+print(df[['Item_Fat_Content']].value_counts())
+
+# Encode 'Item_Fat_Content' to numerical values
+df.replace({'Item_Fat_Content': {'Low Fat': 0, 'Regular': 1}}, inplace=True)
+
+# Analyze the frequency of unique values in 'Item_Type'
+print("\nValue counts for 'Item_Type':")
+print(df[['Item_Type']].value_counts())
+
+# Encode categorical variables using one-hot encoding
+df = pd.get_dummies(df, columns=['Item_Type', 'Outlet_Identifier', 'Outlet_Size', 'Outlet_Location_Type', 'Outlet_Type'])
+
+# Define Target Variable (y) and Feature Variables (X)
+y = df['Item_Outlet_Sales']  # Define the target variable
+X = df.drop(columns=['Item_Identifier', 'Item_Outlet_Sales'])  # Define feature variables
+
+# Train Test Split
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2529)  # Split the data into training and testing sets
+
+# Modeling
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()  # Initialize the Linear Regression model
+
+# Model Evaluation
+model.fit(X_train, y_train)  # Train the model using the training data
+y_pred = model.predict(X_test)  # Predict the target variable on the test data
+
+# Prediction
+from sklearn.metrics import mean_squared_error, r2_score
+mse = mean_squared_error(y_test, y_pred)  # Calculate Mean Squared Error
+r2 = r2_score(y_test, y_pred)  # Calculate R-squared value
+
+# Print model evaluation metrics
+print(f'\nMean Squared Error: {mse}')
+print(f'R-squared: {r2}')
